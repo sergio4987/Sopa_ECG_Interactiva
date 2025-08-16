@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Sopa ECG Interactiva</title>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+    }
+    #sopa {
+      margin: 20px auto;
+      display: grid;
+      grid-template-columns: repeat(25, 25px);
+      grid-template-rows: repeat(25, 25px);
+      gap: 1px;
+    }
+    .celda {
+      width: 25px;
+      height: 25px;
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      font-weight: bold;
+      font-size: 12px;
+      line-height: 25px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .seleccionada {
+      background-color: #add8e6;
+    }
+    .encontrada {
+      background-color: #90ee90;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      font-size: 12px;
+      margin: 5px;
+    }
+    .tachada {
+      text-decoration: line-through;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <!-- <h1>Sopa de Letras Interactiva: ECG</h1> -->
+    <!-- <p>Encuentra las palabras relacionadas con el electrocardiograma (ECG) en esta sopa de letras.</p> -->
+  </div>
+  <div style="display: flex; justify-content: center; gap: 40px; margin-top: 20px;">
+    <div style="text-align: left;">
+      <h3>🔍 Palabras por encontrar</h3>
+      <ul id="lista"></ul>
+    </div>
+    <div>
+      <!-- <h2>Sopa de Letras ECG</h2> -->
+      <div id="sopa"></div>
+    </div>
+  </div>
+
+
+  <script>
+    const palabras = [
+      "RITMO", "FRECUENCIA", "INTERVALO", "COMPLEJOQRS", "ONDAP",
+      "SEGMENTOST", "ONDAT", "INTERVALOQT", "EJEELÉCTRICO", "ISQUEMIA",
+      "INFARTO", "BLOQUEOAV", "TAQUICARDIA", "BRADICARDIA"
+    ];
+
+    const gridSize = 20; // Tamaño de la cuadrícula
+    const grid = Array.from({ length: gridSize }, () => Array(gridSize).fill(""));
+
+    // 🔤 Insertar palabras horizontal o vertical
+    function insertarPalabras() {
+      palabras.forEach(palabra => {
+        let colocada = false;
+        palabra = palabra.toUpperCase();
+        while (!colocada) {
+          const horizontal = Math.random() < 0.5;
+          const x = Math.floor(Math.random() * (horizontal ? gridSize - palabra.length : gridSize));
+          const y = Math.floor(Math.random() * (horizontal ? gridSize : gridSize - palabra.length));
+          let puedeColocar = true;
+
+          for (let i = 0; i < palabra.length; i++) {
+            const cx = horizontal ? x + i : x;
+            const cy = horizontal ? y : y + i;
+            if (grid[cy][cx] !== "" && grid[cy][cx] !== palabra[i]) {
+              puedeColocar = false;
+              break;
+            }
+          }
+
+          if (puedeColocar) {
+            for (let i = 0; i < palabra.length; i++) {
+              const cx = horizontal ? x + i : x;
+              const cy = horizontal ? y : y + i;
+              grid[cy][cx] = palabra[i];
+            }
+            colocada = true;
+          }
+        }
+      });
+    }
+
+    // 🔡 Rellenar con letras aleatorias
+    function rellenarGrid() {
+      const letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          if (grid[y][x] === "") {
+            grid[y][x] = letras[Math.floor(Math.random() * letras.length)];
+          }
+        }
+      }
+    }
+
+    // 🧱 Crear cuadrícula visual
+    function crearCuadricula() {
+      const contenedor = document.getElementById("sopa");
+      contenedor.innerHTML = "";
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          const celda = document.createElement("div");
+          celda.className = "celda";
+          celda.textContent = grid[y][x];
+          celda.dataset.x = x;
+          celda.dataset.y = y;
+          contenedor.appendChild(celda);
+        }
+      }
+    }
+
+    // 📋 Mostrar lista de palabras
+    function mostrarLista() {
+      const lista = document.getElementById("lista");
+      lista.innerHTML = "";
+      palabras.forEach(p => {
+        const li = document.createElement("li");
+        li.textContent = p;
+        li.id = `palabra-${p}`;
+        lista.appendChild(li);
+      });
+    }
+
+    // 🖱️ Interacción con mouse
+    let seleccion = [];
+    let presionado = false;
+
+    document.addEventListener("mousedown", e => {
+      if (e.target.classList.contains("celda")) {
+        presionado = true;
+        seleccion = [e.target];
+        e.target.classList.add("seleccionada");
+      }
+    });
+
+    document.addEventListener("mouseover", e => {
+      if (presionado && e.target.classList.contains("celda") && !seleccion.includes(e.target)) {
+        seleccion.push(e.target);
+        e.target.classList.add("seleccionada");
+      }
+    });
+
+    document.addEventListener("mouseup", () => {
+      presionado = false;
+      const palabraSeleccionada = seleccion.map(c => c.textContent).join("");
+      const palabraReversa = seleccion.map(c => c.textContent).reverse().join("");
+
+      const encontrada = palabras.find(p => p === palabraSeleccionada || p === palabraReversa);
+      if (encontrada) {
+        seleccion.forEach(c => {
+          c.classList.remove("seleccionada");
+          c.classList.add("encontrada");
+        });
+        document.getElementById(`palabra-${encontrada}`).classList.add("tachada");
+      } else {
+        seleccion.forEach(c => c.classList.remove("seleccionada"));
+      }
+      seleccion = [];
+    });
+
+    // 🚀 Inicializar
+    insertarPalabras();
+    rellenarGrid();
+    crearCuadricula();
+    mostrarLista();
+  </script>
+</body>
+</html>
